@@ -15,5 +15,7 @@ This repo holds a collection of course materials taken by a SUSTech undergraduat
   - [**MA107A** Linear Algebra A](./2021S/MA107A)
 - [Sophomore `2021F`](./2021F)
 
+  - [**CS201** Discrete Mathematics](./2021F/CS201)
   - [**CS203** Data Structures and Algorithm Analysis](./2021F/CS203)
+  - [**CS205** C/C++ Program Design](./2021F/CS205)
   - [**MA212** Probability and Statistics](./2021F/MA212)
