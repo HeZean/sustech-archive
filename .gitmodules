@@ -1,3 +1,3 @@
-[submodule "CS205"]
-	path = SUSTech-CS205/2021F
+[submodule "2021F/CS205"]
+	path = 2021F/CS205
 	url = https://github.com/HeZean/SUSTech-CS205
