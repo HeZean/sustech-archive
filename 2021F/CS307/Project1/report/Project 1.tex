@@ -1,0 +1,67 @@
+% !TEX TS-program = xelatex
+% !TEX encoding = UTF-8
+% !Mode:: "TeX:UTF-8"
+
+\documentclass[onecolumn, oneside, ctexart]{SUSTechHomework}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{cite}
+\setlength{\parindent}{2em}
+\linespread{1.5}
+\lstset{language=sql}
+
+\coursecode{CS307}
+\coursename{Database Principle}
+\title{Project 1}
+\date{Oct. 1, 2021}
+
+\begin{document}
+  \maketitle
+  \tableofcontents
+  \pagebreak
+  \setcounter{page}{1}
+
+\input{import}
+
+\section{DML性能分析}
+\input{dml1}
+\input{dml2}
+\input{dml3}
+\input{dml4}
+
+\section{DBMS-文件系统性能对比}
+\input{dbfs1}
+\input{dbfs2}
+
+\section{附加项}
+
+\input{transaction}
+\input{privilege}
+\input{indexio}
+
+\subsection{跨平台性能对比}
+\paragraph{File system} \ding{172} CentOS 7.9.2009 (Python 3.8.8)\qquad\ding{173} macOS 12.0.1 (Python 3.8.10)
+\vspace{-1.4em}
+\paragraph{RDBMS} \quad\hspace{.276em}\ding{172} PostgreSQL 13.3\qquad\ding{173} MySQL 5.6.50\qquad\ding{174} SQLite 3.34.0
+\par 数据均以相同结构存储在数据库中，而文件系统部分考虑到Java历史久远，JVM在各平台下的表现高度均一，仅能体现不同评测环境的硬件区别，故使用Python进行对比，使用Pandas库读取csv文件。以下是查询所有修完CS205的学生信息的平均耗时（文件系统重复十次查询取平均，数据库不预热；下表中数据库项均为execution + fetching，由于使用的均为云数据库，fetching time受网络环境延迟影响数值较大）：
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+          & macOS (Python) & CentOS (Python) & PostgreSQL & MySQL  & SQLite \\ \hline
+平均耗时 (ms) & 1139           & 1271            & 345 + 112     & 317 + 107 & 359 + 120 \\ \hline
+\end{tabular}
+\end{table}
+
+\par 注意到PostgreSQL在查询速度上略低于MySQL，这是因为PostgreSQL和MySQL均是基于MVCC机制 (Multi-Version Concurrency Control) 来保证事务的原子性和隔离性的，该模型将争用降低到最低限度以期减少操作的阻塞。PostgreSQL的实现和MySQL基于的InnoDB引擎的实现是目前公认的两大实现MVCC的方法。其主要区别在于Postgres在查询开始时为了避免脏读而存储的旧版本，其只是在元组的较旧版本上更新xmax，因此较旧版本的大小与相应的插入记录相同。而对于InnoDB，存储在Undo段中的对象版本通常小于相应的插入记录。这是因为仅将更改的值（即差分）写入UNDO日志。\textsuperscript{\cite{blue-2020}}而轻量级的SQLite相较于另外两种数据库，更接近于文件系统。文件系统的查询速度有细微差异，这可能是由于Python interpreter在不同系统上的实现略微不同以及不同系统对文件存储策略的不同造成的。
+\par 本次测试中也注意到，数据库在第一次查询时耗时（345ms）远大于后续几次进行相同查询（30ms），这是由于DBMS的缓存策略相比起文件系统中实现的更加健全高效，在第一次将数据搬入缓存或内存中后，后续查询能有较高的缓存命中率。
+
+\vspace{2em}
+\footnotesize
+\bibliographystyle{IEEEtran}
+\bibliography{commondb}
+
+\noindent \scriptsize{Disclaimer: All references used in this project are only for the purpose of guiding the direction of exploration and ensuring correctness, any code appearing in the referenced web pages has not been used directly, unless explicitly stated.}
+
+\end{document}
+\EOF

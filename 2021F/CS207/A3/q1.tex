@@ -1,0 +1,28 @@
+\subsection*{Q. 1}
+\vspace{-2em}
+\begin{center}
+\begin{karnaugh-map}[4][4][1][$CD$][$AB$]
+\minterms{0, 1, 5, 8, 9, 10, 11, 13, 15}
+\implicant{1}{9}
+\implicant{13}{11}
+\implicant{8}{10}
+\implicantedge{0}{1}{8}{9}
+\end{karnaugh-map}
+\begin{karnaugh-map}[4][4][1][$CD$][$AB$]
+\maxterms{2,3,4,6,7,12,14}
+\implicant{3}{6}
+\implicantedge{4}{12}{6}{14}
+\end{karnaugh-map}
+\end{center}
+\vspace{-2.5em}
+\paragraph{(a)}$F(A,B,C,D)=B'C'+C'D+AD+AB'$
+\vspace{-1em}
+\paragraph{(b)}$F(A,B,C,D)=(B+C)'+(C+D')'+(A'+D')'+(A'+B)'$
+\vspace{-1em}
+\paragraph{(c)}$F(A,B,C,D)=((B'C')'(C'D)'(AD)'(AB')')'$
+\vspace{-1em}
+\paragraph{(d)}$F(A,B,C,D)=(B'+D)(A+C')$
+\vspace{-1em}
+\paragraph{(e)}$F(A,B,C,D)=((B'+D)'+(A+C')')'$
+\vspace{-1em}
+\paragraph{(f)}$F(A,B,C,D)=(BD')'(A'C)'$

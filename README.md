@@ -18,4 +18,6 @@ This repo holds a collection of course materials taken by a SUSTech undergraduat
   - [**CS201** Discrete Mathematics](./2021F/CS201)
   - [**CS203** Data Structures and Algorithm Analysis](./2021F/CS203)
   - [**CS205** C/C++ Program Design](./2021F/CS205)
+  - [**CS207** Digital Logic](./2021F/CS207)
+  - [**CS307** Principles of Database Systems](./2021F/CS307)
   - [**MA212** Probability and Statistics](./2021F/MA212)

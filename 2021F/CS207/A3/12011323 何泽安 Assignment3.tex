@@ -1,0 +1,409 @@
+% !TEX TS-program = xelatex
+% !TEX encoding = UTF-8
+% !Mode:: "TeX:UTF-8"
+
+\documentclass[onecolumn, oneside, ctexart]{SUSTechHomework}
+\setlength{\parindent}{2em}
+\linespread{1.5}
+\usepackage{karnaugh-map}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{longtable}
+\usepackage{circuitikz}
+\ctikzset{logic ports=ieee}
+\usetikzlibrary{calc}
+
+\coursecode{CS207}
+\coursename{Digital Logic}
+\title{Assignment 3}
+\date{Dec. 6, 2021}
+
+\lstset{language=verilog}
+
+\begin{document}
+  \maketitle
+\section{DIGITAL DESIGN THEORY}
+
+\input{q1}
+\input{q2}
+\input{q3}
+\input{q4}
+\input{q5}
+\input{q6}
+
+\section{DIGITAL DESIGN LAB}
+
+\subsection*{Task 1}
+\subsubsection*{Design File}
+\begin{lstlisting}
+`timescale 1ns/1ps
+
+module decode_74138(
+    input A, B, C,
+    input G1, G2a, G2b,
+    output reg [7:0] Y
+);
+    always @ * begin
+        if ({G1, G2a, G2b} == 'b100) begin
+            case ({C, B, A})
+                'd0: Y <= ~'b0000_0001;
+                'd1: Y <= ~'b0000_0010;
+                'd2: Y <= ~'b0000_0100;
+                'd3: Y <= ~'b0000_1000;
+                'd4: Y <= ~'b0001_0000;
+                'd5: Y <= ~'b0010_0000;
+                'd6: Y <= ~'b0100_0000;
+                'd7: Y <= ~'b1000_0000;
+            endcase
+        end
+        else begin
+            Y = ~'b0000_0000;
+        end
+    end
+endmodule
+
+
+module decode_4_16(
+    input A, B, C, D,
+    input dec_en,
+    output [15:0] Y
+);
+    reg [2:0] lo_en = 'b000;
+    reg [2:0] hi_en = 'b000;
+    decode_74138 lo(A, B, C, lo_en[2], lo_en[1], lo_en[0], Y[7:0]);
+    decode_74138 hi(A, B, C, hi_en[2], hi_en[1], hi_en[0], Y[15:8]);
+
+        always @ * begin
+        if (dec_en) begin
+            if (!D) begin
+                lo_en <= 'b100;
+                hi_en <= 'b000;
+            end
+            else begin
+                lo_en <= 'b000;
+                hi_en <= 'b100;
+            end
+        end
+        else begin
+            lo_en <= 'b000;
+            hi_en <= 'b000;
+        end
+    end
+endmodule
+\end{lstlisting}
+\vspace{-2em}
+\subsubsection*{Simulation File}
+\begin{lstlisting}
+`timescale 1ns/1ps
+
+module decode_74138_test();
+    reg A, B, C;
+    reg G1, G2a, G2b;
+    wire [7:0] Y;
+
+    decode_74138 dec(A, B, C, G1, G2a, G2b, Y);
+
+    initial begin
+        {G1, G2a, G2b} = 'b000;
+
+        while ({G1, G2a, G2b} < 'b111) begin
+            {C, B, A} = 'b000;
+
+            while ({C, B, A} < 'b111) begin
+                #10 {C, B, A} = {C, B, A} + 1;
+            end
+            #10 {G1, G2a, G2b} = {G1, G2a, G2b} + 1;
+        end
+        #10 $finish();
+    end
+endmodule
+\end{lstlisting}
+\vspace{-2em}
+\centerline{\includegraphics[width=\textwidth]{fig/t1}}
+\par The 74138 decoder has three enable ports and should only be enabled when \textbf{\{G1, G2a, G2b\} = 'b100}, when the decoder is not enabled, no matter what the input is, the output keeps 'b1111\_1111. Notice the part of waveform where \textbf{\{G1, G2a, G2b\} = 'b100}, we have \{C, B, A\} be the selection signals and the outputs are all as expected.\\
+
+\begin{lstlisting}
+`timescale 1ns/1ps
+
+module decode_4_16_test();
+    reg A, B, C, D;
+    reg dec_en;
+    wire [15:0] Y;
+
+    decode_4_16 dec(A, B, C, D, dec_en, Y);
+
+    initial begin
+        dec_en = 'b0;
+        repeat(2) begin
+            {D, C, B, A} = 'b0000;
+
+            while ({D, C, B, A} < 'b1111) begin
+                #10 {D, C, B, A} = {D, C, B, A} + 1;
+            end
+
+            #10 dec_en = dec_en + 1;
+        end
+        #10 $finish();
+    end
+endmodule
+\end{lstlisting}
+\vspace{-2em}
+\centerline{\includegraphics[width=\textwidth]{fig/t2}}
+\par Similarly, when the decoder is not enabled, the output keeps 1111\_1111\_1111\_1111, otherwise it fits the result we expected (one-hot).
+
+\subsubsection*{Constraint File}
+\begin{lstlisting}
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[4]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[5]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[6]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[7]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[8]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[9]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[10]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[11]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[12]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[13]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[14]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Y[15]}]
+set_property IOSTANDARD LVCMOS33 [get_ports A]
+set_property IOSTANDARD LVCMOS33 [get_ports B]
+set_property IOSTANDARD LVCMOS33 [get_ports C]
+set_property IOSTANDARD LVCMOS33 [get_ports D]
+set_property IOSTANDARD LVCMOS33 [get_ports dec_en]
+set_property PACKAGE_PIN U5 [get_ports dec_en]
+set_property PACKAGE_PIN T5 [get_ports D]
+set_property PACKAGE_PIN T4 [get_ports C]
+set_property PACKAGE_PIN R4 [get_ports B]
+set_property PACKAGE_PIN W4 [get_ports A]
+set_property PACKAGE_PIN A21 [get_ports {Y[0]}]
+set_property PACKAGE_PIN E22 [get_ports {Y[1]}]
+set_property PACKAGE_PIN D22 [get_ports {Y[2]}]
+set_property PACKAGE_PIN E21 [get_ports {Y[3]}]
+set_property PACKAGE_PIN D21 [get_ports {Y[4]}]
+set_property PACKAGE_PIN G21 [get_ports {Y[5]}]
+set_property PACKAGE_PIN G22 [get_ports {Y[6]}]
+set_property PACKAGE_PIN F21 [get_ports {Y[7]}]
+set_property PACKAGE_PIN J17 [get_ports {Y[8]}]
+set_property PACKAGE_PIN L14 [get_ports {Y[9]}]
+set_property PACKAGE_PIN L15 [get_ports {Y[10]}]
+set_property PACKAGE_PIN L16 [get_ports {Y[11]}]
+set_property PACKAGE_PIN K16 [get_ports {Y[12]}]
+set_property PACKAGE_PIN M15 [get_ports {Y[13]}]
+set_property PACKAGE_PIN M16 [get_ports {Y[14]}]
+set_property PACKAGE_PIN M17 [get_ports {Y[15]}]
+\end{lstlisting}
+
+\centerline{\includegraphics[width=0.5\textwidth]{fig/e1}
+		\quad\includegraphics[width=0.5\textwidth]{fig/e2}}
+\par The left fig. shows when decoder is not enabled (the 5$^{\text{th}}$ switch counting from right, a.k.a. dec\_en is set as 0 now), outputs are all 1. The right one, dec\_en = 1, A = B = C = D = 0, then Y[0] acts as the one-hot, since the output ports of 74138 is low-enabled, Y[0] = 0 and the rest 15 bits are 1.\\
+
+\centerline{\includegraphics[width=0.33\textwidth]{fig/e3}
+		\quad\includegraphics[width=0.33\textwidth]{fig/e4}
+		\quad\includegraphics[width=0.33\textwidth]{fig/e5}}
+\scriptsize
+\noindent (a) input as 0101, output as Y[5] = 0, rest are 1; \qquad (b) input as 0110, output as Y[6] = 0, rest are 1;
+\qquad (c) input as 0010, output as Y[2] = 0, rest are 1.
+\normalsize
+
+
+\subsection*{Task 2}
+\subsubsection*{Design File}
+\begin{lstlisting}
+module mux_74151(
+    input mux_en,
+    input s2, s1, s0,
+    input d0, d1, d2, d3, d4, d5, d6, d7,
+    output reg Y,
+    output W
+);
+    always @ * begin
+        if (!mux_en) begin
+            case ({s2, s1, s0})
+                'd0: Y <= d0;
+                'd1: Y <= d1;
+                'd2: Y <= d2;
+                'd3: Y <= d3;
+                'd4: Y <= d4;
+                'd5: Y <= d5;
+                'd6: Y <= d6;
+                'd7: Y <= d7;
+            endcase
+        end
+        else begin
+            Y <= 'b0;
+        end
+    end
+
+    assign W = ~Y;
+endmodule
+\end{lstlisting}
+\vspace{-3em}
+\par As the same of standard 74151, the enable signal is low-enabled, and there should have two output ports, where one is the selected input and the other one is its negation.\\
+\begin{lstlisting}
+module func_df(
+    input A, B, C, D,
+    output Y
+);
+    assign Y = (~A & ~B & ~C & ~D) | (B & D) | (A & C) | (~B & C & ~D) | (~A & ~B & ~D);
+endmodule
+\end{lstlisting}
+
+\begin{center}
+\begin{karnaugh-map}[4][4][1][$AB$][$CD$]
+\minterms{0,5,7,13,15,10,11,14,8}
+\end{karnaugh-map}
+\end{center}
+\vspace{-2em}
+From the K-map above (actually this is quite similar to checking the truth-table), we conclude:
+\begin{lstlisting}
+case ({A, B, C})
+	'b000: Y = ~D;
+	'b001: Y = ~D;
+	'b010: Y = D;
+	'b011: Y = D;
+	'b110: Y = D;
+	'b111: Y = 1;
+	'b100: Y = 0;
+	'b101: Y = 1;
+endcase
+\end{lstlisting}
+\vspace{-3em}
+Thus we map this into our module mux 74151:
+\begin{lstlisting}
+module func_1mux(
+    input A, B, C, D,
+    output Y
+);
+    mux_74151 mux(0, A, B, C,
+                  ~D, ~D, D, D, 0, 1, D, 1,
+                  Y);  // we don't use <W>, aka. ~Y
+endmodule
+
+
+module func_2mux(
+    input A, B, C, D,
+    output reg Y
+);
+    reg en1 = 1;
+    reg en2 = 1;
+    wire y1, y2;
+
+    always @ * begin
+        if (D) begin
+            en1 <= 0;
+            en2 <= 1;
+            Y <= y1;
+        end
+        else begin
+            en1 <= 1;
+            en2 <= 0;
+            Y <= y2;
+        end
+    end
+
+    mux_74151 mux1(en1, A, B, C,
+                   0, 0, 1, 1, 0, 1, 1, 1,
+                   y1);  // D == 1
+
+    mux_74151 mux2(en2, A, B, C,
+                   1, 1, 0, 0, 0, 1, 0, 1,
+                   y2);  // D == 0
+endmodule
+\end{lstlisting}
+
+\subsubsection*{Simulation File}
+\begin{lstlisting}
+`timescale 1ns/1ps
+
+module mux_74151_test();
+    reg mux_en;
+    reg s2, s1, s0;
+    reg d0, d1, d2, d3, d4, d5, d6, d7;
+    wire Y, W;
+
+    mux_74151 mux(mux_en,
+                  s2, s1, s0,
+                  d0, d1, d2, d3, d4, d5, d6, d7,
+                  Y, W);
+
+    initial begin
+        mux_en = 'b1;
+        {s2, s1, s0} = 'b000;
+        {d7, d6, d5, d4, d3, d2, d1, d0} = 'b1111_1111;
+
+        #10 mux_en = 'b0;
+        while ({s2, s1, s0} < 'b111) begin
+            #10 {s2, s1, s0} = {s2, s1, s0} + 1;
+            {d7, d6, d5, d4, d3, d2, d1, d0} = 'b0000_0001 << {s2, s1, s0};
+        end
+        #10 $finish();
+    end
+endmodule
+\end{lstlisting}
+\vspace{-2em}
+\centerline{\includegraphics[width=\textwidth]{fig/t3}}
+\par When testing the mux itself, we just take 1111\_1111 as an example input when it is not enabled (mux\_en == 1). When it is enabled, since the mux will output the cooresponding input d\$(x) where x = \{s2, s1, s0\}, and in the testbench we've let it to be one (while the others be zero), thus the output of mux, Y, should always be 1, and its negation, W, is always 0.
+
+\begin{lstlisting}
+`timescale 1ns/1ps
+
+module mux_func_test();
+    reg A, B, C, D,
+    wire Y_df, Y_1mux, Y_2mux;
+
+    func_df df(A, B, C, D, Y_df);
+    func_1mux one_mux(A, B, C, D, Y_1mux);
+    func_2mux two_mux(A, B, C, D, Y_2mux);
+
+    initial begin
+        {A, B, C, D} = 'b0000;
+        while ({A, B, C, D} < 'b1111) begin
+            #10 {A, B, C, D} = {A, B, C, D} + 1;
+        end
+        #10 $finish();
+    end
+endmodule
+\end{lstlisting}
+\vspace{-2em}
+\centerline{\includegraphics[width=\textwidth]{fig/func}}
+\par First we notice that three ways to implement the function have the same output, then we check the truth-table and found all the outputs are right.
+\begin{longtable}{cccc|c}
+\hline
+A & B & C & D & Y \\ \hline
+\endfirsthead
+%
+\endhead
+%
+\hline
+\endfoot
+%
+\endlastfoot
+%
+0 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 1 \\
+0 & 0 & 1 & 1 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 & 1 \\
+0 & 1 & 1 & 0 & 0 \\
+0 & 1 & 1 & 1 & 1 \\
+1 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 1 & 0 \\
+1 & 0 & 1 & 0 & 1 \\
+1 & 0 & 1 & 1 & 1 \\
+1 & 1 & 0 & 0 & 0 \\
+1 & 1 & 0 & 1 & 1 \\
+1 & 1 & 1 & 0 & 1 \\
+1 & 1 & 1 & 1 & 1 \\ \hline
+\end{longtable}
+
+
+\subsection*{Problems \& Solutions}
+\paragraph{(1)}At first I couldn't understand why 74138-decoder should has three enable ports, until detailed research \textit{"The three enable pins of chip (in which Two active-low and one active-high) reduce the need for external gates or inverters when expanding."} (Components101, 2018)
+\paragraph{(2)}After happening the dilemma that variables went to be X again in the simulation, I have a better understanding of blocking and non-blocking assignments.
+
+\end{document}

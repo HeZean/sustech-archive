@@ -1,0 +1,15 @@
+\subsection{删除条目（删）}
+delete操作一般使用WHERE做限定词，这部分的耗时类似于查询（见下文分析）；另外对于被指向的外键表中的数据，一般需要加上CASCADE进行级联删除。
+\begin{lstlisting}
+ALTER TABLE project1.learnt
+    DROP CONSTRAINT learnt_sid_fkey;
+ALTER TABLE project1.learnt
+    ADD FOREIGN KEY (sid) REFERENCES project1.student (id)
+        ON DELETE CASCADE;
+        
+DELETE FROM project1.student
+WHERE sex = 'F'
+  AND id BETWEEN 11000020 AND 11080020;
+\end{lstlisting}
+\vspace{-2.3em}
+\par 此时的删除学生操作会将该学生的学习记录级联删除，执行删除语句的返回结果为\textit{40,220 rows affected in 1 s 591 ms}。

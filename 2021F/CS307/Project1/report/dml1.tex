@@ -1,0 +1,78 @@
+\subsection{插入条目（增）}
+
+插入条目耗时主要源自以下几点：
+\vspace{-.5em}
+\paragraph{条件检查} 关系型数据库为了保证ACID中的一致性（Consistency），会在插入动作后检查新插入的条目是否满足所有设置的条件（这里主要指CHECK），显然，每次插入所需检查的项目越多，耗时越长。以下控制其余变量保持一致，演示不断增加CHECK的数目，并在Python段用逐条插入（开启自动提交）所导致的时间消耗增加。
+\begin{lstlisting}
+CREATE TABLE demo1 (
+    val int,
+    CONSTRAINT demo1_chk1 CHECK (val > 0),
+    CONSTRAINT demo1_chk2 CHECK (val % 2 = 0),
+    CONSTRAINT demo1_chk3 CHECK (val < 10000)
+);
+\end{lstlisting}
+\vspace{-2em}
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+              & No constraint & chk1 & chk1\&2 & chk1\&2\&3 \\ \hline
+插入500条数据 (ms) & 3593          & 3649 & 3776    & 3778       \\ \hline
+\end{tabular}
+\end{table}
+
+\paragraph{外键约束} 每插入一条数据都需要在外键所指向的表中对应列检查是否有对应条目，此检查又与外键所指向的表中条目数有关：总数据量越大，在其中寻找某一可能存在的外键耗时越多。但所幸PostgreSQL会自动为外键所指向的列设置index，减少了检查耗时。
+\begin{lstlisting}
+CREATE TABLE demo2 (
+    val int,
+    cid varchar(20)          -- case 1: no foreign key constraint
+    REFERENCES demo3(id)     -- case 2: demo3 contains 2 items
+    REFERENCES courses(cid)  -- case 3: courses contains 338 items
+);
+
+\end{lstlisting}
+\vspace{-2.3em}
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+              & 无外键  & Ref 2 items & Ref 338 items \\ \hline
+插入500条数据 (ms) & 3529 & 3804        & 3818          \\ \hline
+\end{tabular}
+\end{table}
+
+\paragraph{主键 / 唯一性约束} 此检查耗时与当前此表中的条目数量相关，已有的条目越多，检查插入后是否依然满足唯一性的耗时越长。在批量插入中，越晚插入的数据因为已有数据不断增多而插入速度变慢。另外，主键列由于存在index，较一般的unique约束插入慢，见下文分析。
+\begin{lstlisting}
+CREATE TABLE demo3 (
+    cid varchar(20) UNIQUE
+);
+\end{lstlisting}
+\vspace{-2.3em}
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+数据量（原有 $\to$ 插入后）        & 0 $\to$ 500 & 501 $\to$ 1000 & 1000 $\to$ 1500 \\ \hline
+插入500条数据 (ms) & 3409        & 3614           & 3738            \\ \hline
+\end{tabular}
+\end{table}
+
+\paragraph{Index更新}
+当对表中的数据进行增加、删除和修改的时候，索引也要动态的维护，因此会降低数据的维护（增删改）速度。这也是我们需要避免在频繁修改数据的表中建立index的原因。
+\begin{lstlisting}
+CREATE TABLE demo4 (
+    val1 int,
+    val2 int
+);
+CREATE INDEX demo4_idx1 ON demo4 (val1);  -- for comparation
+CREATE INDEX demo4_idx2 ON demo4 (val2);  -- for comparation
+\end{lstlisting}
+\vspace{-2.3em}
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+              & 无index & 2 indexes \\ \hline
+插入500条数据 (ms) & 3746   & 3898      \\ \hline
+\end{tabular}
+\end{table}

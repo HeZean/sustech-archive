@@ -1,0 +1,9 @@
+\subsection{修改条目（改）}
+一方面，关系型数据库要求修改后的数据依然保持所要求的\emph{一致性}，并可能需要维护index，此部分检查的开销的分析见上文中“增”部分；另一方面则是WHERE限定词的查询开销。
+\begin{lstlisting}
+UPDATE project1.student
+SET sex='M'
+WHERE id BETWEEN 11000020 AND 11080020;
+-- 39,781 rows affected in 162 ms
+\end{lstlisting}
+\vspace{-2em}
